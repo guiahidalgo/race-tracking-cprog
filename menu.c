@@ -1,8 +1,21 @@
 #include <stdio.h>
+#include <stdlib.h>
+
+int checkFile();
 
 int main() {
-  int choice;
+  int choice, checkFileResult;
 
+  checkFileResult = checkFile();
+
+  if (checkFileResult == 1) {
+    printf("The file 'tar_teams.csv' exists. Directing to menu...\n\n\n");
+  }
+  else {
+    printf("The file 'tar_teams.csv' does not exist. Create the file first and add to directory.");
+    exit(0);
+  }
+  
   do {
     printf("* * * * * * * * * *\n");
     printf("*                 *\n");
@@ -29,3 +42,15 @@ int main() {
     }
   }  while (choice !=7);
 }
+
+int checkFile() {
+  FILE *file;
+
+  if ((file = fopen("tar_teams.csv", "r")) == NULL ) {
+    return 0;
+  }
+  else {
+      fclose (file);
+      return 1;
+  }
+} 
