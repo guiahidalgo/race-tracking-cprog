@@ -140,7 +140,6 @@ void addLeg(struct leg_s *ptr, int *legs_count)
   do
   {
     valid = 1;
-
     printf("\nLeg number: ");
     scanf("%d", &legNo);
     printf("Budget: ");
@@ -171,7 +170,7 @@ void addLeg(struct leg_s *ptr, int *legs_count)
 
     if (valid == 0)
     {
-      printf("\nInvalid input. Please try again.\n");
+      printf("\n Leg Number already Exist. Please try again.\n");
     }
 
   } while (valid == 0);
@@ -212,7 +211,7 @@ void printLeg(struct leg_s leg, struct location_s locations[], int locations_cou
     printf(" (Elimination)\n");
   else
     printf("\n");
-  
+
   for (int i = 0; i < locations_count; i++) {
     struct location_s location = locations[i];
     printf("  Destination %d: %s (%s, %s)\n", location.destinationId, location.name, location.city, location.country);
