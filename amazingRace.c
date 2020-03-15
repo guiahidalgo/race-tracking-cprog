@@ -16,6 +16,12 @@ struct team_s
   char *member2;
 };
 
+struct team_id_node
+{
+  int teamNo;
+  struct team_id_node *next;
+};
+
 struct leg_s
 {
   int legNo;
@@ -34,19 +40,21 @@ struct location_s
   char *type;
   int isPitstop;
   char isEndOfLeg;
+  struct team_id_node *teamIdStart;
 };
 
-const char *getfield(char *line, int num);
+char *getfield(char *line, int num);
 int printMenu();
 void loadTeams(struct team_s *ptr, int *count);
 void loadLegs(struct leg_s *ptr, int *count);
 void loadLocations(struct location_s *ptr, int *count);
 void addLeg(struct leg_s *ptr, int *legs_count);
 void saveLegsToFile(struct leg_s legs[], int legs_count);
-void printCurrentLeg(struct leg_s legs[], int legs_count, struct location_s locations[], int locations_count);
-void printLeg(struct leg_s leg, struct location_s locations[], int locations_count);
-void printLegAtIndex(struct leg_s legs[], struct location_s locations[], int locations_count, int index);
+void printCurrentLeg(struct leg_s legs[], int legs_count, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count);
+void printLeg(struct leg_s leg, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count);
+void printLegAtIndex(struct leg_s legs[], struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int index);
 void matchLegLocations(struct leg_s leg, struct location_s locations[], int locations_count, struct location_s *ptr, int *matches_count);
+struct team_s getTeam(int teamNo, struct team_s teams[], int teams_count);
 
 int main()
 {
@@ -88,7 +96,7 @@ int main()
       addLeg(legs, &legs_count);
       break;
     case 2:
-      printCurrentLeg(legs, legs_count, locations, locations_count);
+      printCurrentLeg(legs, legs_count, locations, locations_count, teams, teams_count);
       break;
     case 7:
       break;
@@ -170,7 +178,7 @@ void addLeg(struct leg_s *ptr, int *legs_count)
 
     if (valid == 0)
     {
-      printf("\n Leg Number already Exist. Please try again.\n");
+      printf("\n Leg Number already exists. Please try again.\n");
     }
 
   } while (valid == 0);
@@ -204,7 +212,7 @@ void addLeg(struct leg_s *ptr, int *legs_count)
   printf("\nLeg saved.\n");
 }
 
-void printLeg(struct leg_s leg, struct location_s locations[], int locations_count) {
+void printLeg(struct leg_s leg, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count) {
   printf("\n");
   printf("LEG #%d", leg.legNo);
   if (leg.isElimination)
@@ -212,12 +220,40 @@ void printLeg(struct leg_s leg, struct location_s locations[], int locations_cou
   else
     printf("\n");
 
+  struct location_s lastLocation = locations[locations_count - 1];
+  struct team_id_node *ptr = lastLocation.teamIdStart;
+
+  if (ptr != NULL) {
+    printf("  Remaining Teams:\n");
+    while (ptr != NULL) {
+      if (leg.isElimination && ptr->next == NULL)
+        break;
+      struct team_s team = getTeam(ptr->teamNo, teams, teams_count);
+      printf("    - %s & %s (%s)\n", team.member1, team.member2, team.name);
+      ptr = ptr->next;
+    }
+  }
+
   for (int i = 0; i < locations_count; i++) {
     struct location_s location = locations[i];
     printf("  Destination %d: %s (%s, %s)\n", location.destinationId, location.name, location.city, location.country);
     printf("    Task: %s\n", location.task);
     printf("    Type: %s\n", location.type);
   }
+}
+
+struct team_s getTeam(int teamNo, struct team_s teams[], int teams_count) {
+  struct team_s matched;
+
+  for (int i = 0; i < teams_count; i++) {
+    struct team_s team = teams[i];
+    if (team.teamNo == teamNo) {
+      matched = team;
+      break;
+    }
+  }
+
+  return matched;
 }
 
 void matchLegLocations(struct leg_s leg, struct location_s locations[], int locations_count, struct location_s *ptr, int *matches_count) {
@@ -233,20 +269,21 @@ void matchLegLocations(struct leg_s leg, struct location_s locations[], int loca
   }
 }
 
-void printLegAtIndex(struct leg_s legs[], struct location_s locations[], int locations_count, int index) {
+
+void printLegAtIndex(struct leg_s legs[], struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int index) {
   struct leg_s leg = legs[index];
 
   struct location_s matched_locations[locations_count];
-  int matched_count = 0;
+  int matched_locs_count = 0;
 
-  matchLegLocations(leg, locations, locations_count, matched_locations, &matched_count);
+  matchLegLocations(leg, locations, locations_count, matched_locations, &matched_locs_count);
 
-  printLeg(leg, matched_locations, matched_count);
+  printLeg(leg, matched_locations, matched_locs_count, teams, teams_count);
 }
 
-void printCurrentLeg(struct leg_s legs[], int legs_count, struct location_s locations[], int locations_count)
+void printCurrentLeg(struct leg_s legs[], int legs_count, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count)
 {
-  printLegAtIndex(legs, locations, locations_count, legs_count - 1);
+  printLegAtIndex(legs, locations, locations_count, teams, teams_count, legs_count - 1);
 }
 
 // Teams
@@ -332,6 +369,28 @@ void loadLocations(struct location_s *ptr, int *count) {
     ptr->type = strdup(getfield(strdup(line), 7));
     ptr->isPitstop = atoi(strdup(getfield(strdup(line), 8)));
     ptr->isEndOfLeg = atoi(strdup(getfield(strdup(line), 9)));
+    ptr->teamIdStart = NULL;
+
+    int idIndex = 10;
+    char *rawId = getfield(strdup(line), idIndex);
+
+    struct team_id_node *curr = ptr->teamIdStart;
+
+    while (rawId != NULL) {
+      struct team_id_node *node = (struct team_id_node *)malloc(sizeof(struct team_id_node));
+      node->teamNo = atoi(strdup(rawId)); 
+
+      if (curr == NULL) {
+        ptr->teamIdStart = node;
+        curr = node;
+      } else {
+        curr->next = node;
+        curr = node;
+      }
+
+      idIndex++;
+      rawId = getfield(strdup(line), idIndex);
+    }
 
     free(tmp);
 
@@ -342,9 +401,9 @@ void loadLocations(struct location_s *ptr, int *count) {
 
 // CSV management
 
-const char *getfield(char *line, int num)
+char *getfield(char *line, int num)
 {
-  const char *token;
+  char *token;
   for (token = strtok(line, ","); token && *token; token = strtok(NULL, ",\n"))
   {
     if (!--num)
