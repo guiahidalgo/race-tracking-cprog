@@ -50,9 +50,9 @@ void loadLegs(struct leg_s *ptr, int *count);
 void loadLocations(struct location_s *ptr, int *count);
 void addLeg(struct leg_s *ptr, int *legs_count);
 void saveLegsToFile(struct leg_s legs[], int legs_count);
-void printCurrentLeg(struct leg_s legs[], int legs_count, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count);
-void printLeg(struct leg_s leg, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count);
-void printLegAtIndex(struct leg_s legs[], struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int index);
+void printCurrentLeg(struct leg_s legs[], int legs_count, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int showWinnersOnly);
+void printLeg(struct leg_s leg, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int showWinnersOnly);
+void printLegAtIndex(struct leg_s legs[], struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int index, int showWinnersOnly);
 void matchLegLocations(struct leg_s leg, struct location_s locations[], int locations_count, struct location_s *ptr, int *matches_count);
 struct team_s getTeam(int teamNo, struct team_s teams[], int teams_count);
 
@@ -96,8 +96,16 @@ int main()
       addLeg(legs, &legs_count);
       break;
     case 2:
-      printCurrentLeg(legs, legs_count, locations, locations_count, teams, teams_count);
+      printCurrentLeg(legs, legs_count, locations, locations_count, teams, teams_count, 0);
       break;
+    case 3:
+      displayLegInfoAll();
+      break;
+    case 4:
+      addLocationToCurrentLeg();
+      break;
+    case 5: 
+      printCurrentLeg(legs, legs_count, locations, locations_count, teams, teams_count, 1);
     case 7:
       break;
     default:
@@ -212,7 +220,44 @@ void addLeg(struct leg_s *ptr, int *legs_count)
   printf("\nLeg saved.\n");
 }
 
-void printLeg(struct leg_s leg, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count) {
+void printLeg(struct leg_s leg, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int showWinnersOnly) {
+  
+  struct location_s lastLocation = locations[locations_count - 1];
+  struct team_id_node *ptr = lastLocation.teamIdStart;
+ 
+  int winningplace = 1;
+  if(showWinnersOnly == 1) {     
+      printf("THE AMAZING RACE \n \n");
+      if (ptr != NULL) {
+        while (ptr != NULL) {
+            switch(winningplace)
+            {
+                case 1:
+                printf("Winning Team: ");
+                break;
+
+                case 2:
+                printf("2nd Place: ");
+                break;
+
+                case 3:
+                printf("3rd Place: ");
+                break;
+            }
+
+            if (leg.isElimination && ptr->next == NULL)
+                break;
+            struct team_s team = getTeam(ptr->teamNo, teams, teams_count);
+            printf("%s & %s (%s)\n", team.member1, team.member2, team.name);
+            ptr = ptr->next;
+            winningplace++;
+            if(winningplace > 3)
+                break;
+        }
+     }
+  } 
+  else
+  {
   printf("\n");
   printf("LEG #%d", leg.legNo);
   if (leg.isElimination)
@@ -220,8 +265,7 @@ void printLeg(struct leg_s leg, struct location_s locations[], int locations_cou
   else
     printf("\n");
 
-  struct location_s lastLocation = locations[locations_count - 1];
-  struct team_id_node *ptr = lastLocation.teamIdStart;
+ 
 
   if (ptr != NULL) {
     printf("  Remaining Teams:\n");
@@ -240,6 +284,9 @@ void printLeg(struct leg_s leg, struct location_s locations[], int locations_cou
     printf("    Task: %s\n", location.task);
     printf("    Type: %s\n", location.type);
   }
+  }
+  
+ 
 }
 
 struct team_s getTeam(int teamNo, struct team_s teams[], int teams_count) {
@@ -270,7 +317,7 @@ void matchLegLocations(struct leg_s leg, struct location_s locations[], int loca
 }
 
 
-void printLegAtIndex(struct leg_s legs[], struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int index) {
+void printLegAtIndex(struct leg_s legs[], struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int index, int showWinnersOnly) {
   struct leg_s leg = legs[index];
 
   struct location_s matched_locations[locations_count];
@@ -278,12 +325,12 @@ void printLegAtIndex(struct leg_s legs[], struct location_s locations[], int loc
 
   matchLegLocations(leg, locations, locations_count, matched_locations, &matched_locs_count);
 
-  printLeg(leg, matched_locations, matched_locs_count, teams, teams_count);
+  printLeg(leg, matched_locations, matched_locs_count, teams, teams_count, showWinnersOnly);
 }
 
-void printCurrentLeg(struct leg_s legs[], int legs_count, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count)
+void printCurrentLeg(struct leg_s legs[], int legs_count, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int showWinnersOnly)
 {
-  printLegAtIndex(legs, locations, locations_count, teams, teams_count, legs_count - 1);
+  printLegAtIndex(legs, locations, locations_count, teams, teams_count, legs_count - 1, showWinnersOnly);
 }
 
 // Teams
@@ -310,6 +357,30 @@ void loadTeams(struct team_s *ptr, int *count)
 }
 
 // Legs
+
+void displayLegInfoAll() {
+    struct leg_s theLeg[100];
+    int totalNumberOfLegs = 0;
+    loadLegs(theLeg, &totalNumberOfLegs);
+
+    for (int i = 0; i < totalNumberOfLegs; i++)
+    {
+        struct team_s teams[100];
+        int teams_count = 0;
+        loadTeams(teams, &teams_count);
+
+        struct leg_s legs[100];
+        int legs_count = 0;
+        loadLegs(legs, &legs_count);
+
+        struct location_s locations[100];
+        int locations_count = 0;
+        loadLocations(locations, &locations_count);
+
+        printLegAtIndex(legs, locations, locations_count, teams, teams_count, i, 0);
+    }
+       
+}
 
 void loadLegs(struct leg_s *ptr, int *count)
 {
@@ -353,6 +424,52 @@ void saveLegsToFile(struct leg_s legs[], int legs_count)
 
 // Locations
 
+void addLocationToCurrentLeg()
+{
+  struct leg_s currentlegs[100];
+  int currentlegs_count = 0;
+  loadLegs(currentlegs, &currentlegs_count);
+  struct leg_s curr_leg = currentlegs[currentlegs_count - 1];
+
+  int legNo = curr_leg.legNo;
+  int destinationId;
+  char destinationName[100];
+  char distinationCity[100];
+  char distinationCountry[100];
+  char task[100];
+  char type[100];
+  int isPitstop;
+  int isEndOfLeg;
+  char temp;
+
+  destinationId = inputNumber("DestinationID : ");
+
+  printf("Destination Name: ");
+  scanf("%s", destinationName);
+
+  printf("City: ");
+  scanf("%s", distinationCity);
+
+  printf("Country: ");
+  scanf("%s", distinationCountry);
+
+  printf("Task: ");
+  scanf("%s", task);
+
+  printf("Type: ");
+  scanf("%s", type);
+
+  isPitstop = inputBoolean("Pitstop? [1]Yes [0]No : ");
+  isEndOfLeg = inputBoolean("End of Leg? [1]Yes [0]No : ");
+
+  FILE * stream = fopen(locationsFileName, "a");
+  fprintf(stream, "%d,%d,%s,%s,%s,%s,%s,%d,%d", legNo, destinationId, destinationName, distinationCity, distinationCountry, task, type,isPitstop,isEndOfLeg);
+  fprintf(stream, "\n");
+  fclose(stream);
+
+}
+
+
 void loadLocations(struct location_s *ptr, int *count) {
   FILE* stream = fopen(locationsFileName, "r");
 
@@ -378,7 +495,7 @@ void loadLocations(struct location_s *ptr, int *count) {
 
     while (rawId != NULL) {
       struct team_id_node *node = (struct team_id_node *)malloc(sizeof(struct team_id_node));
-      node->teamNo = atoi(strdup(rawId)); 
+      node->teamNo = atoi(strdup(rawId));
 
       if (curr == NULL) {
         ptr->teamIdStart = node;
@@ -411,4 +528,35 @@ char *getfield(char *line, int num)
   }
 
   return NULL;
+}
+
+
+
+//validators.
+
+int inputBoolean(char *inputBooleanlabel)
+{
+  int flag;
+  do
+  {
+   flag =  inputNumber(inputBooleanlabel);
+   if(flag > 2)
+    printf("\n Input only 1 or 0 \n\n");
+  }
+  while(flag != 1 && flag != 0);
+  return flag;
+}
+
+int inputNumber(char *inputlabel)
+{
+  int inputval;
+  char ch;
+  printf("\n%s ", inputlabel);
+  while (scanf("%d", &inputval) != 1)
+  {
+      while ((ch = getchar()) != '\n')
+          putchar(ch);  // dispose of bad input
+      printf("\nInvalid Input. \n");
+  }
+  return inputval;
 }
