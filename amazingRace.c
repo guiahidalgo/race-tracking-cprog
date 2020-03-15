@@ -25,7 +25,7 @@ struct team_id_node
 struct leg_s
 {
   int legNo;
-  float budget;
+  int budget;
   int isElimination;
 };
 
@@ -55,6 +55,9 @@ void printLeg(struct leg_s leg, struct location_s locations[], int locations_cou
 void printLegAtIndex(struct leg_s legs[], struct location_s locations[], int locations_count, struct team_s teams[], int teams_count, int index);
 void matchLegLocations(struct leg_s leg, struct location_s locations[], int locations_count, struct location_s *ptr, int *matches_count);
 struct team_s getTeam(int teamNo, struct team_s teams[], int teams_count);
+int inputNumber(char *inputlabel);
+int inputBoolean(char *inputBooleanlabel);
+int inputLegNumber(char *inputlabel, struct leg_s legs[], int legsCount);
 
 int main()
 {
@@ -145,72 +148,23 @@ void addLeg(struct leg_s *ptr, int *legs_count)
 
   int valid = 1;
 
-  do
-  {
-    valid = 1;
-    printf("\nLeg number: ");
-    scanf("%d", &legNo);
-    printf("Budget: ");
-    scanf("%f", &budget);
-    printf("Elimination (1:yes/0:no): ");
-    scanf("%d", &isElimination);
-
-    if (isElimination < 0 || isElimination > 1)
-    {
-      valid = 0;
-    }
-
+  legNo = inputLegNumber("Leg number: ", ptr, *legs_count);
+  budget = inputNumber("Budget: ");
+  isElimination = inputBoolean("Elimination [1]Yes [0]No):");
+  
+  if(inputBoolean("\nProceed with saving? [1]Yes [0]No : ") == 1) {
     struct leg_s *start = ptr;
-    int current = 0;
+    ptr += *legs_count;
+    ptr->legNo = legNo;
+    ptr->budget = budget;
+    ptr->isElimination = isElimination;
 
-    //checking if leg already exists in the file
-    while (current < *legs_count)
-    {
-      if (start->legNo == legNo)
-      {
-        valid = 0;
-        break;
-      }
+    *legs_count += 1;
 
-      start++;
-      current++;
-    }
-
-    if (valid == 0)
-    {
-      printf("\n Leg Number already exists. Please try again.\n");
-    }
-
-  } while (valid == 0);
-
-  int confirmed;
-  do
-  {
-    printf("\nProceed with saving (1:yes/0:no)? ");
-    scanf("%d", &confirmed);
-
-    if (confirmed < 0 || confirmed > 1)
-    {
-      printf("\nInvalid input. Please try again.\n");
-    }
-  } while (confirmed < 0 || confirmed > 1);
-
-  if (confirmed == 0)
-    return;
-
-  struct leg_s *start = ptr;
-  ptr += *legs_count;
-
-  ptr->legNo = legNo;
-  ptr->budget = budget;
-  ptr->isElimination = isElimination;
-
-  *legs_count += 1;
-
-  saveLegsToFile(start, *legs_count);
-
-  printf("\nLeg saved.\n");
-}
+    saveLegsToFile(start, *legs_count);
+    printf("\nLeg saved.\n");
+  }
+} 
 
 void printLeg(struct leg_s leg, struct location_s locations[], int locations_count, struct team_s teams[], int teams_count) {
   printf("\n");
@@ -321,7 +275,7 @@ void loadLegs(struct leg_s *ptr, int *count)
     char *tmp = strdup(line);
 
     ptr->legNo = atoi(strdup(getfield(strdup(line), 1)));
-    ptr->budget = atof(strdup(getfield(strdup(line), 2)));
+    ptr->budget = atoi(strdup(getfield(strdup(line), 2)));
     ptr->isElimination = atoi(strdup(getfield(strdup(line), 3)));
 
     free(tmp);
@@ -340,7 +294,7 @@ void saveLegsToFile(struct leg_s legs[], int legs_count)
   for (int i = 0; i < legs_count; i++)
   {
     struct leg_s leg = legs[i];
-    fprintf(stream, "%d,%.0f,%d", leg.legNo, leg.budget, leg.isElimination);
+    fprintf(stream, "%d,%d,%d", leg.legNo, leg.budget, leg.isElimination);
 
     if (i < legs_count - 1)
     {
@@ -411,4 +365,64 @@ char *getfield(char *line, int num)
   }
 
   return NULL;
+}
+
+// Validators
+//generic getter for number input
+int inputNumber(char *inputlabel) { 
+  int inputval; 
+  char ch;
+
+  int valid = 1;
+  do {
+    printf("\n%s", inputlabel);
+    valid = scanf("%d", &inputval);
+
+    while ((ch = getchar()) != '\n')
+      putchar(ch);  // dispose of bad input
+
+    if (valid == 0)
+      printf("\bInvalid input.");
+    
+  } while (valid != 1);
+
+  return inputval;
+}
+
+int inputLegNumber(char *inputlabel, struct leg_s legs[], int legsCount)
+{
+  int inputVal;
+  int valid = 1;
+  do {
+    valid = 1;
+    inputVal = inputNumber(inputlabel);
+
+    for (int i = 0; i < legsCount; i++) {
+      struct leg_s leg = legs[i];
+      if (leg.legNo == inputVal) {
+        valid = 0;
+        break;
+      }
+    }
+
+    if (valid == 0) {
+      printf("\nInvalid input. The leg number already exists.\n");
+    }
+  } while (valid == 0);
+
+  return inputVal;
+}
+
+//1=true 0=false
+int inputBoolean(char *inputBooleanlabel)
+{
+  int flag;
+  do
+  {
+   flag =  inputNumber(inputBooleanlabel);
+   if(flag > 2)
+    printf("\nInvalid. Input only 1 or 0\n");
+  }
+  while(flag != 1 && flag != 0);
+  return flag;
 }
