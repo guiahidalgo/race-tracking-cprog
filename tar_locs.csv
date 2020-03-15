@@ -1,2 +1,7 @@
-1,1,Roxas Market,Davao City,Philippines,Cook food,Road block,0,0
-1,2,Abreeza Mall,Davao City,Philippines,Take picture,Detour,1,1,1,2,3,4
+1,1,Roxas Market,Davao City,Philippines,Eat a native Filipino dish,Road block,1,0
+1,2,Abreeza Mall,Davao City,Philippines,Take a photo with a mascot -OR- Look for the golden durian,Detour,0,1,1,2,3,4,5
+2,1,Lotte World,Seoul,South Korea,Ride the Gyro Revolution,Road block,1,0
+2,2,Gwangjang Market,Seoul,South Korea,Eat a Mayak Kimbap -OR- Learn 3 Korean sentences,Detour,0,1,3,2,1,4
+3,1,Narita Airport,Narita,Japan,Dance to a Japanese song,Road block,0,1,3,1,2,4
+4,1,Gardens by the Bay,Singapore,Singapore,Take a photo of a violet flower,Road block,0,1,1,2,3
+5,1,Central Park,New York,USA,Walk a dog -OR- Play hide and seek with a kid,Detour,0,1,2,3,1
