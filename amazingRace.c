@@ -61,6 +61,7 @@ int inputLegNumber(char *inputlabel, struct leg_s legs[], int legsCount);
 char* inputString(char *inputLabel);
 void displayLegInfoAll();
 void addLocationToCurrentLeg(struct location_s locations[], int numberoflocations);
+void printEliminatedTeams(struct leg_s legs[], int legsCount, struct location_s locations[], int locationsCount, struct team_s teams[], int teamsCount);
 
 int main()
 {
@@ -114,7 +115,7 @@ int main()
       printCurrentLeg(legs, legs_count, locations, locations_count, teams, teams_count, 1);
       break;
     case 6:
-      displayEliminatedTeams();
+      printEliminatedTeams(legs, legs_count, locations, locations_count, teams, teams_count);
       break;
     case 7:
       break;
@@ -126,57 +127,6 @@ int main()
 
   return 0;
 }
-
-
-void displayEliminatedTeams(){
-
-    struct leg_s theLeg[100];
-    int totalNumberOfLegs = 0;
-    loadLegs(theLeg, &totalNumberOfLegs);
-    
-    struct team_s teams[100];
-    int teams_count = 0;
-    loadTeams(teams, &teams_count);
-
-    struct location_s locations[100];
-    int locations_count = 0;
-    loadLocations(locations, &locations_count);
-
-    printf("THE AMAZING RACE (Season 20) \n\n");
-    printf("Eliminated Teams\n");
-    printf("--------------------\n");
-
-    for (int i = 0; i < totalNumberOfLegs; i++)
-    {
-        struct leg_s leg = theLeg[i];
-        for(int ctr = 0; ctr < locations_count; ctr++) {
-          struct location_s locat = locations[ctr];
-          struct location_s lastLocation = locations[locat.legNo];
-          struct team_id_node *ptr = lastLocation.teamIdStart;
-      
-          if(locat.legNo == leg.legNo && leg.isElimination == 1){
-
-            if (ptr != NULL)
-            {
-              int theLastTeam = 0;
-              while (ptr != NULL)
-              {
-                theLastTeam = ptr->teamNo;
-                ptr = ptr->next;
-              }
-
-              struct team_s team = getTeam(theLastTeam, teams, teams_count);
-              printf("%s & %s (%s) - Eliminated: Leg #%d\n  ", team.member1, team.member2, team.name, leg.legNo);
-            }
-          }
-
-        }
-     
-    }
-
-
-}
-
 
 //Functions
 int printMenu()
@@ -360,6 +310,66 @@ void printCurrentLeg(struct leg_s legs[], int legs_count, struct location_s loca
   printLegAtIndex(legs, locations, locations_count, teams, teams_count, legs_count - 1, showWinnersOnly);
 }
 
+void printEliminatedTeams(struct leg_s legs[], int legsCount, struct location_s locations[], int locationsCount, struct team_s teams[], int teamsCount) {
+  printf("Eliminated Teams\n");
+  printf("----------------\n");
+  for (int legIdx = 0; legIdx < legsCount; legIdx++) {
+    struct leg_s leg = legs[legIdx];
+    if (leg.isElimination == 0)
+      continue;
+
+    struct location_s matchedLocations[locationsCount];
+    int matchedLocationsCount = 0;
+
+    matchLegLocations(leg, locations, locationsCount, matchedLocations, &matchedLocationsCount);
+
+    for (int locIdx = 0; locIdx < matchedLocationsCount; locIdx++) {
+      struct location_s location = matchedLocations[locIdx];
+      if (location.isEndOfLeg == 0)
+        continue;
+
+      struct team_id_node *ptr = location.teamIdStart;
+
+      if (ptr == NULL)
+        continue;
+
+      while (ptr->next != NULL) {
+        ptr = ptr->next;
+      };
+
+      struct team_s team = getTeam(ptr->teamNo, teams, teamsCount);
+      printf("%s & %s (%s) - Eliminated: Leg %d\n", team.member1, team.member2, team.name, leg.legNo);
+    }  
+  }
+
+  struct leg_s lastLeg = legs[legsCount - 1];
+  struct location_s matchedLocations[locationsCount];
+  int matchedLocationsCount = 0;
+  matchLegLocations(lastLeg, locations, locationsCount, matchedLocations, &matchedLocationsCount);
+
+  int legFinished = 0;
+  for (int locIdx = 0; locIdx < matchedLocationsCount; locIdx++) {
+    struct location_s location = matchedLocations[locIdx];
+    if (location.isEndOfLeg == 0)
+      continue;
+
+    struct team_id_node *ptr = location.teamIdStart;
+
+    if (ptr == NULL)
+      break;
+
+    legFinished = 1;
+
+    struct team_s team = getTeam(ptr->teamNo, teams, teamsCount);
+    printf("\n%s & %s (%s) - WINNER\n", team.member1, team.member2, team.name);
+    break;
+  }
+
+  if (legFinished == 0)
+    printf("Race is not over yet.\n");
+}
+
+
 // Teams
 
 void loadTeams(struct team_s *ptr, int *count)
@@ -456,15 +466,13 @@ void addLocationToCurrentLeg(struct location_s locations[], int numberoflocation
   
   struct location_s lastLocation = locations[numberoflocations -1];
   if(lastLocation.isEndOfLeg == 1) {
-    printf("Unable to Add New Destination. The race is already Over..");
+    printf("Unable to add new destination. The race is already over.\n");
   }
   else {
     struct leg_s currentlegs[100];
     int currentlegs_count = 0;
     loadLegs(currentlegs, &currentlegs_count);
     struct leg_s curr_leg = currentlegs[currentlegs_count - 1];
-
-    // TODO: Check if the leg has already ended
 
     int legNo = curr_leg.legNo;
 
