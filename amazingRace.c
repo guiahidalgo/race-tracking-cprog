@@ -58,6 +58,7 @@ struct team_s getTeam(int teamNo, struct team_s teams[], int teams_count);
 int inputNumber(char *inputlabel);
 int inputBoolean(char *inputBooleanlabel);
 int inputLegNumber(char *inputlabel, struct leg_s legs[], int legsCount);
+char* inputString(char *inputLabel);
 void displayLegInfoAll();
 void addLocationToCurrentLeg();
 
@@ -160,7 +161,7 @@ void addLeg(struct leg_s *ptr, int *legs_count)
 
   legNo = inputLegNumber("Leg number: ", ptr, *legs_count);
   budget = inputNumber("Budget: ");
-  isElimination = inputBoolean("Elimination [1]Yes [0]No):");
+  isElimination = inputBoolean("Elimination [1]Yes [0]No: ");
 
   if (inputBoolean("\nProceed with saving? [1]Yes [0]No : ") == 1)
   {
@@ -220,7 +221,7 @@ void printLeg(struct leg_s leg, struct location_s locations[], int locations_cou
     if (leg.isElimination)
       printf(" (Elimination)\n");
     else
-      printf("\n");
+      printf(" (Non-elimination)\n");
 
     if (ptr != NULL)
     {
@@ -393,39 +394,21 @@ void addLocationToCurrentLeg()
   loadLegs(currentlegs, &currentlegs_count);
   struct leg_s curr_leg = currentlegs[currentlegs_count - 1];
 
+  // TODO: Check if the leg has already ended
+
   int legNo = curr_leg.legNo;
-  int destinationId;
-  char destinationName[100];
-  char distinationCity[100];
-  char distinationCountry[100];
-  char task[100];
-  char type[100];
-  int isPitstop;
-  int isEndOfLeg;
-  char temp;
 
-  destinationId = inputNumber("DestinationID : ");
-
-  printf("Destination Name: ");
-  scanf("%s", destinationName);
-
-  printf("City: ");
-  scanf("%s", distinationCity);
-
-  printf("Country: ");
-  scanf("%s", distinationCountry);
-
-  printf("Task: ");
-  scanf("%s", task);
-
-  printf("Type: ");
-  scanf("%s", type);
-
-  isPitstop = inputBoolean("Pitstop? [1]Yes [0]No : ");
-  isEndOfLeg = inputBoolean("End of Leg? [1]Yes [0]No : ");
+  int destinationId = inputNumber("Destination ID: ");
+  char* name = inputString("Destination Name: ");
+  char* city = inputString("City: ");
+  char* country = inputString("Country: ");
+  char* task = inputString("Task: ");
+  char* type = inputString("Type: ");
+  int isPitstop = inputBoolean("Pitstop? [1]Yes [0]No : ");
+  int isEndOfLeg = inputBoolean("End of Leg? [1]Yes [0]No : ");
 
   FILE *stream = fopen(locationsFileName, "a");
-  fprintf(stream, "%d,%d,%s,%s,%s,%s,%s,%d,%d", legNo, destinationId, destinationName, distinationCity, distinationCountry, task, type, isPitstop, isEndOfLeg);
+  fprintf(stream, "%d,%d,%s,%s,%s,%s,%s,%d,%d", legNo, destinationId, name, city, country, task, type, isPitstop, isEndOfLeg);
   fprintf(stream, "\n");
   fclose(stream);
 }
@@ -505,7 +488,7 @@ int inputBoolean(char *inputBooleanlabel)
   {
     flag = inputNumber(inputBooleanlabel);
     if (flag > 2)
-      printf("\n Input only 1 or 0 \n\n");
+      printf("\nInput only 1 or 0\n");
   } while (flag != 1 && flag != 0);
   return flag;
 }
@@ -520,12 +503,13 @@ int inputNumber(char *inputlabel)
   {
     printf("\n%s", inputlabel);
     valid = scanf("%d", &inputval);
-
-    while ((ch = getchar()) != '\n')
-      putchar(ch); // dispose of bad input
+ 
+    ch = getchar();
+    while (ch != '\n')
+      ch = getchar();
 
     if (valid == 0)
-      printf("\bInvalid input.");
+      printf("\nInvalid input. Enter a number.\n");
 
   } while (valid != 1);
 
@@ -558,4 +542,13 @@ int inputLegNumber(char *inputlabel, struct leg_s legs[], int legsCount)
   } while (valid == 0);
 
   return inputVal;
+}
+
+char* inputString(char *inputLabel) {
+  char inputVal[100];
+
+  printf("\n%s", inputLabel);
+  scanf("%[^\n]%*c", inputVal);
+
+  return strdup(inputVal);
 }
