@@ -60,7 +60,7 @@ int inputBoolean(char *inputBooleanlabel);
 int inputLegNumber(char *inputlabel, struct leg_s legs[], int legsCount);
 char* inputString(char *inputLabel);
 void displayLegInfoAll();
-void addLocationToCurrentLeg();
+void addLocationToCurrentLeg(struct location_s locations[], int numberoflocations);
 
 int main()
 {
@@ -108,7 +108,7 @@ int main()
       displayLegInfoAll();
       break;
     case 4:
-      addLocationToCurrentLeg();
+      addLocationToCurrentLeg(locations, locations_count);
       break;
     case 5:
       printCurrentLeg(legs, legs_count, locations, locations_count, teams, teams_count, 1);
@@ -451,30 +451,39 @@ void saveLegsToFile(struct leg_s legs[], int legs_count)
 
 // Locations
 
-void addLocationToCurrentLeg()
+void addLocationToCurrentLeg(struct location_s locations[], int numberoflocations)
 {
-  struct leg_s currentlegs[100];
-  int currentlegs_count = 0;
-  loadLegs(currentlegs, &currentlegs_count);
-  struct leg_s curr_leg = currentlegs[currentlegs_count - 1];
+  
+  struct location_s lastLocation = locations[numberoflocations -1];
+  if(lastLocation.isEndOfLeg == 1) {
+    printf("Unable to Add New Destination. The race is already Over..");
+  }
+  else {
+    struct leg_s currentlegs[100];
+    int currentlegs_count = 0;
+    loadLegs(currentlegs, &currentlegs_count);
+    struct leg_s curr_leg = currentlegs[currentlegs_count - 1];
 
-  // TODO: Check if the leg has already ended
+    // TODO: Check if the leg has already ended
 
-  int legNo = curr_leg.legNo;
+    int legNo = curr_leg.legNo;
 
-  int destinationId = inputNumber("Destination ID: ");
-  char* name = inputString("Destination Name: ");
-  char* city = inputString("City: ");
-  char* country = inputString("Country: ");
-  char* task = inputString("Task: ");
-  char* type = inputString("Type: ");
-  int isPitstop = inputBoolean("Pitstop? [1]Yes [0]No : ");
-  int isEndOfLeg = inputBoolean("End of Leg? [1]Yes [0]No : ");
+    int destinationId = inputNumber("Destination ID: ");
+    char* name = inputString("Destination Name: ");
+    char* city = inputString("City: ");
+    char* country = inputString("Country: ");
+    char* task = inputString("Task: ");
+    char* type = inputString("Type: ");
+    int isPitstop = inputBoolean("Pitstop? [1]Yes [0]No : ");
+    int isEndOfLeg = inputBoolean("End of Leg? [1]Yes [0]No : ");
 
-  FILE *stream = fopen(locationsFileName, "a");
-  fprintf(stream, "%d,%d,%s,%s,%s,%s,%s,%d,%d", legNo, destinationId, name, city, country, task, type, isPitstop, isEndOfLeg);
-  fprintf(stream, "\n");
-  fclose(stream);
+    FILE *stream = fopen(locationsFileName, "a");
+    fprintf(stream, "%d,%d,%s,%s,%s,%s,%s,%d,%d", legNo, destinationId, name, city, country, task, type, isPitstop, isEndOfLeg);
+    fprintf(stream, "\n");
+    fclose(stream);
+  }
+
+
 }
 
 void loadLocations(struct location_s *ptr, int *count)
