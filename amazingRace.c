@@ -166,7 +166,7 @@ void displayEliminatedTeams(){
               }
 
               struct team_s team = getTeam(theLastTeam, teams, teams_count);
-              printf("%s & %s (%s) - Eliminated: Leg #%d\n", team.member1, team.member2, team.name, leg.legNo);
+              printf("%s & %s (%s) - Eliminated: Leg #%d\n  ", team.member1, team.member2, team.name, leg.legNo);
             }
           }
 
@@ -239,35 +239,44 @@ void printLeg(struct leg_s leg, struct location_s locations[], int locations_cou
   struct team_id_node *ptr = lastLocation.teamIdStart;
  
   int winningplace = 1;
-  if(showWinnersOnly == 1) {     
-      printf("THE AMAZING RACE \n \n");
-      if (ptr != NULL) {
-        while (ptr != NULL) {
-            switch(winningplace)
-            {
-                case 1:
-                printf("Winning Team: ");
-                break;
+  if(showWinnersOnly == 1) {    
+      if(lastLocation.isEndOfLeg == 1) 
+      {
+        printf("THE AMAZING RACE \n \n");
+        if (ptr != NULL) {
+          while (ptr != NULL) {
+              switch(winningplace)
+              {
+                  case 1:
+                  printf("Winning Team: ");
+                  break;
 
-                case 2:
-                printf("2nd Place: ");
-                break;
+                  case 2:
+                  printf("2nd Place: ");
+                  break;
 
-                case 3:
-                printf("3rd Place: ");
-                break;
-            }
+                  case 3:
+                  printf("3rd Place: ");
+                  break;
+              }
 
-            if (leg.isElimination && ptr->next == NULL)
-                break;
-            struct team_s team = getTeam(ptr->teamNo, teams, teams_count);
-            printf("%s & %s (%s)\n", team.member1, team.member2, team.name);
-            ptr = ptr->next;
-            winningplace++;
-            if(winningplace > 3)
-                break;
+              if (leg.isElimination && ptr->next == NULL)
+                  break;
+              struct team_s team = getTeam(ptr->teamNo, teams, teams_count);
+              printf("%s & %s (%s)\n", team.member1, team.member2, team.name);
+              ptr = ptr->next;
+              winningplace++;
+              if(winningplace > 3)
+                  break;
+          }
         }
-     }
+      }
+      else
+      {
+        printf("The race is not yet over..");
+      }
+      
+      
   } 
   else
   {
